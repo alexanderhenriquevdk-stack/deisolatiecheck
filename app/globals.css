@@ -1,0 +1,81 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-dm-sans), "DM Sans", system-ui, -apple-system, sans-serif;
+  background: #ffffff;
+  color: #1a2e1a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: #bbf7d0;
+  color: #14532d;
+}
+
+input:focus {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1) !important;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fadeUp 0.7s ease both;
+}
+.fade-up-d1 {
+  animation: fadeUp 0.7s ease 0.1s both;
+}
+.fade-up-d2 {
+  animation: fadeUp 0.7s ease 0.2s both;
+}
+.fade-up-d3 {
+  animation: fadeUp 0.7s ease 0.3s both;
+}
+
+.card-hover:hover {
+  border-color: #86efac !important;
+  box-shadow: 0 4px 24px rgba(22, 163, 74, 0.08) !important;
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(22, 163, 74, 0.25) !important;
+}
+
+.nav-link:hover {
+  color: #16a34a !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .nav-desktop {
+    display: none !important;
+  }
+  .trust-bar {
+    gap: 16px !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .nav-mobile {
+    display: none !important;
+  }
+}

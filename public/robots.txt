@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://deisolatiecheck.nl/sitemap.xml
