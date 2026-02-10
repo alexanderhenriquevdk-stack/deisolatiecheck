@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { getGemeenteByPostcode } from "./gemeenteData";
 
 // ============================================
 // 📋 INSTRUCTIE: Google Sheets koppeling
 // Volg de stappen in de README om je Google Sheets
 // webhook URL te krijgen, en plak die hieronder.
 // ============================================
-const GOOGLE_SHEETS_URL = "G-3J4HX42QRH"; // ← Plak je Google Apps Script URL hier
+const GOOGLE_SHEETS_URL = ""; // ← Plak je Google Apps Script URL hier
 
 const INSULATION_DATA = {
   dak: {
@@ -142,6 +143,14 @@ export default function DeIsolatieCheck() {
   const [formLoading, setFormLoading] = useState(false);
   const calcRef = useRef(null);
 
+  // Gemeente subsidie lookup
+  const gemeenteInfo = useMemo(() => {
+    if (formData.postcode.length >= 4) return getGemeenteByPostcode(formData.postcode);
+    return null;
+  }, [formData.postcode]);
+
+  const gemeenteSubsidie = gemeenteInfo?.actief && gemeenteInfo?.maxSubsidie ? gemeenteInfo.maxSubsidie : 0;
+
   const submitToGoogleSheets = async () => {
     if (!formData.naam || !formData.email || !formData.telefoon) return;
     setFormLoading(true);
@@ -153,6 +162,9 @@ export default function DeIsolatieCheck() {
         totalCost: totalCost,
         netCost: netCost,
         totalSavings: totalSavings,
+        gemeente: gemeenteInfo?.gemeente || "Onbekend",
+        gemeenteSubsidie: gemeenteSubsidie,
+        totaalSubsidie: totalSubsidy + gemeenteSubsidie,
         datum: new Date().toLocaleString("nl-NL"),
       };
       if (GOOGLE_SHEETS_URL) {
@@ -553,6 +565,60 @@ export default function DeIsolatieCheck() {
                   </div>
                 </div>
 
+                {/* Gemeente Subsidie Bonus Block */}
+                {gemeenteInfo && gemeenteSubsidie > 0 && (
+                  <div style={{
+                    background: "linear-gradient(135deg, #fef3c7, #fde68a)",
+                    border: "2px solid #f59e0b",
+                    borderRadius: "16px", padding: "20px 24px", marginTop: "20px", marginBottom: "8px",
+                    textAlign: "left", position: "relative", overflow: "hidden",
+                  }}>
+                    <div style={{
+                      position: "absolute", top: "-8px", right: "16px",
+                      background: "#f59e0b", color: "#fff", fontSize: "11px", fontWeight: 800,
+                      padding: "4px 14px", borderRadius: "0 0 10px 10px",
+                      textTransform: "uppercase", letterSpacing: "1px",
+                    }}>Extra!</div>
+                    <div style={{ fontSize: "16px", fontWeight: 800, color: "#92400e", marginBottom: "6px" }}>
+                      🏛️ Gemeente {gemeenteInfo.gemeente}: tot €{gemeenteSubsidie.toLocaleString("nl-NL")} extra
+                    </div>
+                    <div style={{ fontSize: "13px", color: "#78350f", lineHeight: 1.6, marginBottom: "8px" }}>
+                      {gemeenteInfo.voorwaarden}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                      <div style={{ fontSize: "20px", fontWeight: 900, color: "#b45309" }}>
+                        Totale subsidie: €{(totalSubsidy + gemeenteSubsidie).toLocaleString("nl-NL")}
+                      </div>
+                      <a href={gemeenteInfo.url} target="_blank" rel="noopener noreferrer" style={{
+                        fontSize: "12px", color: "#92400e", fontWeight: 700, textDecoration: "underline",
+                      }}>Bekijk regeling →</a>
+                    </div>
+                    {gemeenteInfo.geldigTot && (
+                      <div style={{ fontSize: "11px", color: "#a16207", marginTop: "6px" }}>
+                        ⏰ Geldig t/m: {gemeenteInfo.geldigTot}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {gemeenteInfo && !gemeenteInfo.actief && gemeenteInfo.gemeente && (
+                  <div style={{
+                    background: "#f1f5f9", border: "1px solid #cbd5e1",
+                    borderRadius: "12px", padding: "14px 20px", marginTop: "20px",
+                    textAlign: "left",
+                  }}>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
+                      🏛️ Gemeente {gemeenteInfo.gemeente}
+                    </div>
+                    <div style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.5 }}>
+                      {gemeenteInfo.voorwaarden || "Op dit moment geen bekende actieve isolatiesubsidie gevonden."}{" "}
+                      <a href={gemeenteInfo.url} target="_blank" rel="noopener noreferrer" style={{ color: "#16a34a", fontWeight: 600 }}>
+                        Check hier →
+                      </a>
+                    </div>
+                  </div>
+                )}
+
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
@@ -560,9 +626,9 @@ export default function DeIsolatieCheck() {
                 }}>
                   {[
                     { label: "Geschatte investering", value: <AnimatedNumber value={totalCost} />, color: "#1e293b" },
-                    { label: "Na subsidie", value: <AnimatedNumber value={netCost} />, color: "#16a34a" },
+                    { label: "Na subsidie", value: <AnimatedNumber value={Math.max(0, totalCost - totalSubsidy - gemeenteSubsidie)} />, color: "#16a34a" },
                     { label: "Jaarlijkse besparing", value: <>~<AnimatedNumber value={totalSavings} /></>, color: "#1e293b" },
-                    { label: "Terugverdientijd", value: netCost > 0 && totalSavings > 0 ? `~${Math.ceil(netCost / totalSavings)} jaar` : "—", color: "#1e293b" },
+                    { label: "Terugverdientijd", value: (() => { const nc = Math.max(0, totalCost - totalSubsidy - gemeenteSubsidie); return nc > 0 && totalSavings > 0 ? `~${Math.ceil(nc / totalSavings)} jaar` : "\u2014"; })(), color: "#1e293b" },
                   ].map((stat, i) => (
                     <div key={i} style={{
                       background: "#fff", borderRadius: "14px", padding: "20px",
@@ -598,7 +664,6 @@ export default function DeIsolatieCheck() {
                     { key: "naam", placeholder: "Je volledige naam", type: "text" },
                     { key: "email", placeholder: "E-mailadres", type: "email" },
                     { key: "telefoon", placeholder: "Telefoonnummer", type: "tel" },
-                    { key: "postcode", placeholder: "Postcode", type: "text" },
                   ].map((field) => (
                     <input
                       key={field.key}
@@ -615,6 +680,27 @@ export default function DeIsolatieCheck() {
                       }}
                     />
                   ))}
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      placeholder="Postcode (bijv. 1234 AB)"
+                      value={formData.postcode}
+                      onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
+                      style={{
+                        width: "100%", padding: "13px 16px", marginBottom: "4px",
+                        background: gemeenteSubsidie > 0 ? "#fefce8" : "#f8fafc",
+                        border: gemeenteSubsidie > 0 ? "2px solid #f59e0b" : "2px solid #e2e8f0",
+                        borderRadius: "10px", color: "#1e293b", fontSize: "14px",
+                        outline: "none", fontFamily: "inherit", boxSizing: "border-box",
+                        transition: "all 0.2s ease",
+                      }}
+                    />
+                    <div style={{ fontSize: "11px", color: gemeenteSubsidie > 0 ? "#b45309" : "#94a3b8", marginBottom: "12px", paddingLeft: "4px", fontWeight: gemeenteSubsidie > 0 ? 700 : 400 }}>
+                      {gemeenteSubsidie > 0
+                        ? `🎉 Gemeente ${gemeenteInfo.gemeente}: tot €${gemeenteSubsidie.toLocaleString("nl-NL")} extra subsidie!`
+                        : "🏛️ Vul je postcode in — we checken of jouw gemeente extra subsidie geeft"}
+                    </div>
+                  </div>
                   <button
                     className="cta-btn"
                     onClick={submitToGoogleSheets}
