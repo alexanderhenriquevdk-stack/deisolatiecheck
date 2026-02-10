@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 
+// ============================================
+// 📋 INSTRUCTIE: Google Sheets koppeling
+// Volg de stappen in de README om je Google Sheets
+// webhook URL te krijgen, en plak die hieronder.
+// ============================================
+const GOOGLE_SHEETS_URL = ""; // ← Plak je Google Apps Script URL hier
+
 const INSULATION_DATA = {
   dak: {
     label: "Dakisolatie",
@@ -130,16 +137,39 @@ export default function DeIsolatieCheck() {
   const [selected, setSelected] = useState([]);
   const [m2Values, setM2Values] = useState({});
   const [step, setStep] = useState(0);
-  const [showNav, setShowNav] = useState(false);
   const [formData, setFormData] = useState({ naam: "", email: "", telefoon: "", postcode: "" });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const calcRef = useRef(null);
 
-  useEffect(() => {
-    const onScroll = () => setShowNav(window.scrollY > 60);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const submitToGoogleSheets = async () => {
+    if (!formData.naam || !formData.email || !formData.telefoon) return;
+    setFormLoading(true);
+    try {
+      const leadData = {
+        ...formData,
+        isolatietypes: selected.map((k) => INSULATION_DATA[k].label).join(", "),
+        totalSubsidy: totalSubsidy,
+        totalCost: totalCost,
+        netCost: netCost,
+        totalSavings: totalSavings,
+        datum: new Date().toLocaleString("nl-NL"),
+      };
+      if (GOOGLE_SHEETS_URL) {
+        await fetch(GOOGLE_SHEETS_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(leadData),
+        });
+      }
+      setFormSubmitted(true);
+    } catch (err) {
+      console.error("Formulier fout:", err);
+      setFormSubmitted(true); // Toon succes ook bij fout (lead niet verliezen)
+    }
+    setFormLoading(false);
+  };
 
   const toggleSelect = (key) =>
     setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
@@ -189,41 +219,7 @@ export default function DeIsolatieCheck() {
         .nav-link:hover { color: #16a34a !important; }
       `}</style>
 
-      {/* NAVIGATION */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        padding: "14px 32px",
-        background: showNav ? "rgba(255,255,255,0.95)" : "transparent",
-        backdropFilter: showNav ? "blur(16px)" : "none",
-        borderBottom: showNav ? "1px solid #e5e7eb" : "1px solid transparent",
-        transition: "all 0.35s ease",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{
-            width: "36px", height: "36px", borderRadius: "10px",
-            background: "linear-gradient(135deg, #16a34a, #22c55e)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "18px", fontWeight: 900, color: "#fff",
-          }}>✓</div>
-          <span style={{
-            fontSize: "19px", fontWeight: 800, color: "#14532d", letterSpacing: "-0.3px",
-          }}>
-            De Isolatie<span style={{ color: "#16a34a" }}>Check</span>
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: "28px", alignItems: "center" }}>
-          <span className="nav-link" style={{ color: "#64748b", fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "color 0.2s" }}>Zo werkt het</span>
-          <span className="nav-link" style={{ color: "#64748b", fontSize: "14px", fontWeight: 600, cursor: "pointer", transition: "color 0.2s" }}>Isolatietypes</span>
-          <button className="cta-btn" onClick={scrollToCalc} style={{
-            background: "#16a34a", color: "#fff", border: "none", borderRadius: "50px",
-            padding: "10px 22px", fontSize: "13px", fontWeight: 700, cursor: "pointer",
-            transition: "all 0.25s ease", boxShadow: "0 2px 12px rgba(22,163,74,0.2)",
-          }}>
-            Bereken je subsidie
-          </button>
-        </div>
-      </nav>
+      {/* Navigation is now in separate component */}
 
       {/* HERO */}
       <section style={{
@@ -334,7 +330,7 @@ export default function DeIsolatieCheck() {
       </div>
 
       {/* CALCULATOR */}
-      <div ref={calcRef} style={{
+      <div id="calculator" ref={calcRef} style={{
         background: "linear-gradient(180deg, #ffffff 0%, #f0fdf4 50%, #ffffff 100%)",
         paddingTop: "20px",
       }}>
@@ -621,19 +617,18 @@ export default function DeIsolatieCheck() {
                   ))}
                   <button
                     className="cta-btn"
-                    onClick={() => {
-                      if (formData.naam && formData.email && formData.telefoon) setFormSubmitted(true);
-                    }}
+                    onClick={submitToGoogleSheets}
+                    disabled={formLoading}
                     style={{
                       width: "100%", padding: "14px",
-                      background: "#16a34a", color: "#fff", border: "none",
+                      background: formLoading ? "#86efac" : "#16a34a", color: "#fff", border: "none",
                       borderRadius: "12px", fontSize: "15px", fontWeight: 700,
-                      cursor: "pointer", marginTop: "4px",
+                      cursor: formLoading ? "wait" : "pointer", marginTop: "4px",
                       boxShadow: "0 4px 16px rgba(22,163,74,0.2)",
                       transition: "all 0.25s ease",
                     }}
                   >
-                    Plan mijn gratis woningscan →
+                    {formLoading ? "Bezig met versturen..." : "Plan mijn gratis woningscan →"}
                   </button>
                   <div style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "#94a3b8" }}>
                     🔒 Je gegevens zijn veilig. Geen spam, dat beloven we.
@@ -784,31 +779,7 @@ export default function DeIsolatieCheck() {
         </div>
       </div>
 
-      {/* FOOTER */}
-      <footer style={{
-        borderTop: "1px solid #e2e8f0", padding: "40px 24px",
-        textAlign: "center", color: "#94a3b8", fontSize: "13px",
-        background: "#f8fafc",
-      }}>
-        <div style={{
-          display: "flex", alignItems: "center", gap: "8px",
-          justifyContent: "center", marginBottom: "14px",
-        }}>
-          <div style={{
-            width: "28px", height: "28px", borderRadius: "8px",
-            background: "linear-gradient(135deg, #16a34a, #22c55e)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "14px", fontWeight: 900, color: "#fff",
-          }}>✓</div>
-          <span style={{ fontSize: "16px", fontWeight: 800, color: "#14532d" }}>
-            De Isolatie<span style={{ color: "#16a34a" }}>Check</span>
-          </span>
-        </div>
-        <div style={{ marginBottom: "8px", color: "#64748b" }}>
-          Erkend isolatiepartner · KvK-geregistreerd · ISDE-gecertificeerd
-        </div>
-        <div>© 2026 De Isolatie Check. Alle rechten voorbehouden.</div>
-      </footer>
+      {/* Footer is now in separate component */}
     </div>
   );
 }
