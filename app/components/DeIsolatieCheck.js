@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from "react";
 // Volg de stappen in de README om je Google Sheets
 // webhook URL te krijgen, en plak die hieronder.
 // ============================================
-const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbx-Eq1yGxp3y4r27KJRSY687mWUhgpY_pKPYLTz0pjTrbdfrqvysnuWbG-_poY1Bu68pQ/exec"; // ← Plak je Google Apps Script URL hier
+const GOOGLE_SHEETS_URL = ""; // ← Plak je Google Apps Script URL hier
 
 const INSULATION_DATA = {
   dak: {

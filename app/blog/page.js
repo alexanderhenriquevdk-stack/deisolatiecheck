@@ -14,6 +14,42 @@ export const metadata = {
 
 const BLOG_POSTS = [
   {
+    slug: "isolatie-subsidie-aanvragen-stap-voor-stap",
+    title: "Isolatie Subsidie Aanvragen: Stap voor Stap Uitleg",
+    excerpt:
+      "Hoe vraag je ISDE subsidie aan in 2026? Complete handleiding met voorwaarden, documenten, het aanvraagproces en veelgemaakte fouten.",
+    date: "14 februari 2026",
+    readTime: "8 min",
+    category: "Subsidie",
+  },
+  {
+    slug: "hoeveel-bespaar-ik-met-isolatie",
+    title: "Hoeveel Bespaar Ik Met Isolatie op Mijn Gasrekening?",
+    excerpt:
+      "Per isolatietype uitgerekend: hoeveel gas en euro's je bespaart met de actuele gasprijzen van 2026. Inclusief vergelijking per woningtype.",
+    date: "13 februari 2026",
+    readTime: "6 min",
+    category: "Besparing",
+  },
+  {
+    slug: "spouwmuurisolatie-alles-wat-je-moet-weten",
+    title: "Spouwmuurisolatie: Alles Wat Je Moet Weten",
+    excerpt:
+      "Alles over spouwmuurisolatie: kosten per woningtype, materialen, besparing, subsidie en hoe je weet of jouw woning geschikt is.",
+    date: "12 februari 2026",
+    readTime: "7 min",
+    category: "Isolatie",
+  },
+  {
+    slug: "vloerisolatie-kosten-besparing",
+    title: "Vloerisolatie: Kosten en Besparing in 2026",
+    excerpt:
+      "Wat kost vloerisolatie? Ontdek de kosten per methode, hoeveel je bespaart op je gasrekening en wanneer je investering is terugverdiend.",
+    date: "11 februari 2026",
+    readTime: "7 min",
+    category: "Isolatie",
+  },
+  {
     slug: "isde-subsidie-2026-complete-gids",
     title: "ISDE Subsidie 2026: De Complete Gids",
     excerpt:

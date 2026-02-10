@@ -36,10 +36,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="nl">
       <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="google-site-verification" content="XLkZOEKNot7U3Z1PTJLAJVHzyDTiTdXE_ZiAAFj6IiU" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-</head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      </head>
       <body className={dmSans.variable}>
         <GoogleAnalytics />
         {children}

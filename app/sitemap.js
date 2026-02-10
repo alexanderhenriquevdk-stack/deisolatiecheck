@@ -37,6 +37,30 @@ export default function sitemap() {
       priority: 0.7,
     },
     {
+      url: "https://deisolatiecheck.nl/blog/vloerisolatie-kosten-besparing",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: "https://deisolatiecheck.nl/blog/spouwmuurisolatie-alles-wat-je-moet-weten",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: "https://deisolatiecheck.nl/blog/hoeveel-bespaar-ik-met-isolatie",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: "https://deisolatiecheck.nl/blog/isolatie-subsidie-aanvragen-stap-voor-stap",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       url: "https://deisolatiecheck.nl/privacy",
       lastModified: new Date(),
       changeFrequency: "yearly",
