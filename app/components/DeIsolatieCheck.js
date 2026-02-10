@@ -590,6 +590,48 @@ export default function DeIsolatieCheck() {
                   );
                 })}
               </div>
+
+              {/* Postcode check — al in stap 1 zodat resultaten compleet zijn */}
+              <div style={{
+                maxWidth: "480px", margin: "20px auto 0",
+                background: "#fff", borderRadius: "14px", padding: "22px",
+                border: gemeenteSubsidie > 0 ? "2px solid #f59e0b" : "1px solid #e5e7eb",
+                boxShadow: gemeenteSubsidie > 0 ? "0 4px 16px rgba(245,158,11,0.1)" : "0 1px 4px rgba(0,0,0,0.04)",
+                transition: "all 0.3s ease",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
+                  <span style={{ fontSize: "22px" }}>🏛️</span>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: "15px", color: "#1e293b" }}>Postcode check</div>
+                    <div style={{ fontSize: "12px", color: "#94a3b8" }}>Check of je gemeente extra subsidie geeft</div>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Bijv. 1012 AB"
+                  value={formData.postcode}
+                  onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
+                  style={{
+                    width: "100%", padding: "13px 16px",
+                    background: gemeenteSubsidie > 0 ? "#fefce8" : "#f8fafc",
+                    border: gemeenteSubsidie > 0 ? "2px solid #f59e0b" : "2px solid #e2e8f0",
+                    borderRadius: "10px", color: "#1e293b", fontSize: "15px",
+                    outline: "none", fontFamily: "inherit", boxSizing: "border-box",
+                    transition: "all 0.2s ease",
+                  }}
+                />
+                <div style={{
+                  fontSize: "12px", marginTop: "8px", paddingLeft: "4px", fontWeight: gemeenteSubsidie > 0 ? 700 : 400,
+                  color: gemeenteSubsidie > 0 ? "#b45309" : "#94a3b8",
+                }}>
+                  {gemeenteSubsidie > 0
+                    ? `🎉 Gemeente ${gemeenteInfo.gemeente}: tot €${gemeenteSubsidie.toLocaleString("nl-NL")} extra subsidie bovenop ISDE!`
+                    : gemeenteInfo && !gemeenteInfo.actief && gemeenteInfo.gemeente
+                      ? `ℹ️ Gemeente ${gemeenteInfo.gemeente}: geen bekende extra subsidie`
+                      : "Vul je postcode in — veel gemeentes geven honderden euro's extra"}
+                </div>
+              </div>
+
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "28px" }}>
                 <button onClick={() => setStep(0)} style={{
                   padding: "14px 28px", borderRadius: "50px", fontSize: "14px", fontWeight: 700,
@@ -621,85 +663,82 @@ export default function DeIsolatieCheck() {
                 padding: "44px 32px", textAlign: "center", position: "relative",
                 boxShadow: "0 8px 40px rgba(22,163,74,0.08)",
               }}>
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "24px", marginBottom: "16px", flexWrap: "wrap" }}>
-                  <ProgressRing percent={subsidyPercent} />
-                  <div>
-                    <div style={{
-                      fontSize: "12px", color: "#64748b", fontWeight: 700,
-                      letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "4px",
-                    }}>Jouw ISDE-subsidie</div>
-                    <div style={{
-                      fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 900,
-                      background: "linear-gradient(135deg, #16a34a, #4ade80)",
-                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                      lineHeight: 1.1,
-                    }}>
-                      <AnimatedNumber value={totalSubsidy} />
-                    </div>
-                    <div style={{ fontSize: "14px", color: "#15803d", fontWeight: 600, marginTop: "4px" }}>
-                      {Math.round(subsidyPercent)}% van je investering terug
-                    </div>
+                {/* Hoofd subsidie bedrag — altijd totaal (ISDE + gemeente) */}
+                <div style={{ marginBottom: "8px" }}>
+                  <div style={{
+                    fontSize: "12px", color: "#64748b", fontWeight: 700,
+                    letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "4px",
+                  }}>Jouw totale subsidiemogelijkheid</div>
+                  <div style={{
+                    fontSize: "clamp(40px, 6vw, 64px)", fontWeight: 900,
+                    background: "linear-gradient(135deg, #16a34a, #4ade80)",
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    lineHeight: 1.1,
+                  }}>
+                    <AnimatedNumber value={totalSubsidy + gemeenteSubsidie} />
                   </div>
                 </div>
 
-                {/* Gemeente Subsidie Bonus Block */}
+                {/* Subsidie breakdown */}
+                <div style={{
+                  display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap",
+                  marginTop: "12px", marginBottom: "8px",
+                }}>
+                  <div style={{
+                    background: "#fff", borderRadius: "12px", padding: "10px 18px",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.05)", display: "inline-flex", alignItems: "center", gap: "8px",
+                  }}>
+                    <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>ISDE</span>
+                    <span style={{ fontSize: "18px", fontWeight: 800, color: "#16a34a" }}>{formatCurrency(totalSubsidy)}</span>
+                  </div>
+                  {gemeenteSubsidie > 0 && (
+                    <div style={{
+                      background: "linear-gradient(135deg, #fef3c7, #fde68a)",
+                      borderRadius: "12px", padding: "10px 18px",
+                      border: "1px solid #f59e0b",
+                      display: "inline-flex", alignItems: "center", gap: "8px",
+                    }}>
+                      <span style={{ fontSize: "11px", color: "#92400e", fontWeight: 700, textTransform: "uppercase" }}>🏛️ {gemeenteInfo.gemeente}</span>
+                      <span style={{ fontSize: "18px", fontWeight: 800, color: "#b45309" }}>+{formatCurrency(gemeenteSubsidie)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Gemeente detail info */}
                 {gemeenteInfo && gemeenteSubsidie > 0 && (
                   <div style={{
-                    background: "linear-gradient(135deg, #fef3c7, #fde68a)",
-                    border: "2px solid #f59e0b",
-                    borderRadius: "16px", padding: "20px 24px", marginTop: "20px", marginBottom: "8px",
-                    textAlign: "left", position: "relative", overflow: "hidden",
+                    background: "rgba(245,158,11,0.08)", borderRadius: "12px",
+                    padding: "12px 18px", marginTop: "12px",
+                    textAlign: "left", fontSize: "12px", color: "#78350f", lineHeight: 1.6,
                   }}>
-                    <div style={{
-                      position: "absolute", top: "-8px", right: "16px",
-                      background: "#f59e0b", color: "#fff", fontSize: "11px", fontWeight: 800,
-                      padding: "4px 14px", borderRadius: "0 0 10px 10px",
-                      textTransform: "uppercase", letterSpacing: "1px",
-                    }}>Extra!</div>
-                    <div style={{ fontSize: "16px", fontWeight: 800, color: "#92400e", marginBottom: "6px" }}>
-                      🏛️ Gemeente {gemeenteInfo.gemeente}: tot €{gemeenteSubsidie.toLocaleString("nl-NL")} extra
-                    </div>
-                    <div style={{ fontSize: "13px", color: "#78350f", lineHeight: 1.6, marginBottom: "8px" }}>
-                      {gemeenteInfo.voorwaarden}
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-                      <div style={{ fontSize: "20px", fontWeight: 900, color: "#b45309" }}>
-                        Totale subsidie: €{(totalSubsidy + gemeenteSubsidie).toLocaleString("nl-NL")}
-                      </div>
-                      <a href={gemeenteInfo.url} target="_blank" rel="noopener noreferrer" style={{
-                        fontSize: "12px", color: "#92400e", fontWeight: 700, textDecoration: "underline",
-                      }}>Bekijk regeling →</a>
-                    </div>
+                    <strong>Gemeente {gemeenteInfo.gemeente}:</strong> {gemeenteInfo.voorwaarden}{" "}
+                    <a href={gemeenteInfo.url} target="_blank" rel="noopener noreferrer" style={{
+                      color: "#92400e", fontWeight: 700, textDecoration: "underline",
+                    }}>Bekijk regeling →</a>
                     {gemeenteInfo.geldigTot && (
-                      <div style={{ fontSize: "11px", color: "#a16207", marginTop: "6px" }}>
-                        ⏰ Geldig t/m: {gemeenteInfo.geldigTot}
-                      </div>
+                      <span style={{ marginLeft: "8px", color: "#a16207" }}>⏰ t/m {gemeenteInfo.geldigTot}</span>
                     )}
                   </div>
                 )}
 
                 {gemeenteInfo && !gemeenteInfo.actief && gemeenteInfo.gemeente && (
                   <div style={{
-                    background: "#f1f5f9", border: "1px solid #cbd5e1",
-                    borderRadius: "12px", padding: "14px 20px", marginTop: "20px",
-                    textAlign: "left",
+                    background: "#f1f5f9", borderRadius: "12px",
+                    padding: "12px 18px", marginTop: "12px", textAlign: "left",
+                    fontSize: "12px", color: "#64748b", lineHeight: 1.5,
                   }}>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#334155", marginBottom: "4px" }}>
-                      🏛️ Gemeente {gemeenteInfo.gemeente}
-                    </div>
-                    <div style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.5 }}>
-                      {gemeenteInfo.voorwaarden || "Op dit moment geen bekende actieve isolatiesubsidie gevonden."}{" "}
-                      <a href={gemeenteInfo.url} target="_blank" rel="noopener noreferrer" style={{ color: "#16a34a", fontWeight: 600 }}>
-                        Check hier →
-                      </a>
-                    </div>
+                    🏛️ Gemeente {gemeenteInfo.gemeente}: {gemeenteInfo.voorwaarden || "Op dit moment geen bekende actieve isolatiesubsidie gevonden."}{" "}
+                    <a href={gemeenteInfo.url} target="_blank" rel="noopener noreferrer" style={{ color: "#16a34a", fontWeight: 600 }}>
+                      Check hier →
+                    </a>
                   </div>
                 )}
 
+                {/* Stats grid */}
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-                  gap: "16px", marginTop: "32px",
+                  gap: "16px", marginTop: "28px",
                 }}>
                   {[
                     { label: "Geschatte investering", value: <AnimatedNumber value={totalCost} />, color: "#1e293b" },
@@ -771,20 +810,49 @@ export default function DeIsolatieCheck() {
                 </div>
               </div>
 
+              {/* ===== GROTE CTA BUTTON ===== */}
+              <div id="lead-form-section" style={{
+                textAlign: "center", marginTop: "36px", marginBottom: "8px",
+              }}>
+                {!formSubmitted && (
+                  <button
+                    className="cta-btn"
+                    onClick={() => {
+                      const el = document.getElementById("lead-form-fields");
+                      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }}
+                    style={{
+                      padding: "20px 48px", borderRadius: "60px", fontSize: "18px", fontWeight: 800,
+                      background: "linear-gradient(135deg, #16a34a, #22c55e)",
+                      color: "#fff", border: "none", cursor: "pointer",
+                      boxShadow: "0 8px 30px rgba(22,163,74,0.35)",
+                      transition: "all 0.3s ease",
+                      letterSpacing: "-0.3px",
+                      animation: "ctaPulse 2.5s ease-in-out infinite",
+                    }}
+                  >
+                    Vraag je gratis woningscan aan →
+                  </button>
+                )}
+                <div style={{ fontSize: "13px", color: "#64748b", marginTop: "10px", lineHeight: 1.6 }}>
+                  ✅ Erkend isolatiebedrijf &nbsp;·&nbsp; ✅ Gratis en vrijblijvend &nbsp;·&nbsp; ✅ Binnen 24 uur reactie
+                </div>
+              </div>
+
               {/* Lead Form */}
               {!formSubmitted ? (
-                <div style={{
-                  background: "#fff", border: "1px solid #e5e7eb",
-                  borderRadius: "20px", padding: "36px", marginTop: "36px",
+                <div id="lead-form-fields" style={{
+                  background: "#fff", border: "2px solid #16a34a",
+                  borderRadius: "20px", padding: "36px", marginTop: "20px",
                   maxWidth: "480px", marginLeft: "auto", marginRight: "auto",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+                  boxShadow: "0 4px 24px rgba(22,163,74,0.12)",
                 }}>
                   <div style={{ textAlign: "center", marginBottom: "24px" }}>
                     <div style={{ fontSize: "20px", fontWeight: 800, color: "#0f172a", marginBottom: "8px" }}>
-                      Gratis woningscan aanvragen
+                      📋 Ontvang je persoonlijke isolatieadvies
                     </div>
                     <div style={{ fontSize: "14px", color: "#64748b", lineHeight: 1.6 }}>
-                      Ontvang een persoonlijk isolatieadvies en exacte subsidieberekening. Geheel vrijblijvend.
+                      Een erkend isolatie-expert komt <strong>gratis</strong> bij je langs voor een woningscan op maat.
                     </div>
                   </div>
                   {[
@@ -815,36 +883,38 @@ export default function DeIsolatieCheck() {
                       onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
                       style={{
                         width: "100%", padding: "13px 16px", marginBottom: "4px",
-                        background: gemeenteSubsidie > 0 ? "#fefce8" : "#f8fafc",
-                        border: gemeenteSubsidie > 0 ? "2px solid #f59e0b" : "2px solid #e2e8f0",
+                        background: formData.postcode.length >= 4 ? "#f0fdf4" : "#f8fafc",
+                        border: formData.postcode.length >= 4 ? "2px solid #4ade80" : "2px solid #e2e8f0",
                         borderRadius: "10px", color: "#1e293b", fontSize: "14px",
                         outline: "none", fontFamily: "inherit", boxSizing: "border-box",
                         transition: "all 0.2s ease",
                       }}
                     />
-                    <div style={{ fontSize: "11px", color: gemeenteSubsidie > 0 ? "#b45309" : "#94a3b8", marginBottom: "12px", paddingLeft: "4px", fontWeight: gemeenteSubsidie > 0 ? 700 : 400 }}>
-                      {gemeenteSubsidie > 0
-                        ? `🎉 Gemeente ${gemeenteInfo.gemeente}: tot €${gemeenteSubsidie.toLocaleString("nl-NL")} extra subsidie!`
-                        : "🏛️ Vul je postcode in — we checken of jouw gemeente extra subsidie geeft"}
-                    </div>
+                    {formData.postcode.length >= 4 && (
+                      <div style={{ fontSize: "11px", color: "#16a34a", marginBottom: "8px", paddingLeft: "4px", fontWeight: 600 }}>
+                        ✅ {gemeenteInfo?.gemeente ? `Gemeente ${gemeenteInfo.gemeente}` : "Postcode ingevuld"}
+                      </div>
+                    )}
                   </div>
                   <button
                     className="cta-btn"
                     onClick={submitToGoogleSheets}
                     disabled={formLoading}
                     style={{
-                      width: "100%", padding: "14px",
-                      background: formLoading ? "#86efac" : "#16a34a", color: "#fff", border: "none",
-                      borderRadius: "12px", fontSize: "15px", fontWeight: 700,
-                      cursor: formLoading ? "wait" : "pointer", marginTop: "4px",
-                      boxShadow: "0 4px 16px rgba(22,163,74,0.2)",
+                      width: "100%", padding: "16px",
+                      background: formLoading ? "#86efac" : "linear-gradient(135deg, #16a34a, #22c55e)",
+                      color: "#fff", border: "none",
+                      borderRadius: "14px", fontSize: "16px", fontWeight: 800,
+                      cursor: formLoading ? "wait" : "pointer", marginTop: "8px",
+                      boxShadow: "0 6px 24px rgba(22,163,74,0.3)",
                       transition: "all 0.25s ease",
+                      letterSpacing: "-0.2px",
                     }}
                   >
-                    {formLoading ? "Bezig met versturen..." : "Plan mijn gratis woningscan →"}
+                    {formLoading ? "Bezig met versturen..." : "✅ Plan mijn gratis woningscan"}
                   </button>
                   <div style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "#94a3b8" }}>
-                    🔒 Je gegevens zijn veilig. Geen spam, dat beloven we.
+                    🔒 Je gegevens zijn veilig — geen spam, dat beloven we.
                   </div>
                 </div>
               ) : (
