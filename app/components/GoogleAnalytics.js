@@ -9,7 +9,7 @@ import { useEffect } from "react";
 // 3. Kopieer je Measurement ID (begint met G-)
 // 4. Plak het hieronder
 // ============================================
-const GA_ID = "G-XXXXXXXXXX"; // ← Vervang door jouw ID
+const GA_ID = "G-3J4HX42QRH"; // ← Vervang door jouw ID
 
 export default function GoogleAnalytics() {
   useEffect(() => {
