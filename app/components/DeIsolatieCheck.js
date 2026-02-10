@@ -8,68 +8,92 @@ import { getGemeenteByPostcode } from "./gemeenteData";
 // Volg de stappen in de README om je Google Sheets
 // webhook URL te krijgen, en plak die hieronder.
 // ============================================
-const GOOGLE_SHEETS_URL = ""; // ← Plak je Google Apps Script URL hier
+const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbx-Eq1yGxp3y4r27KJRSY687mWUhgpY_pKPYLTz0pjTrbdfrqvysnuWbG-_poY1Bu68pQ/exec"; // ← Plak je Google Apps Script URL hier
 
 const INSULATION_DATA = {
   dak: {
     label: "Dakisolatie",
     icon: "🏠",
-    pricePerM2: 45,
+    pricePerM2: 70,
+    fixedCost: 500, // afplakken, altijd in prijs
     subsidySingle: 16.25,
     subsidyDouble: 32.5,
-    minM2: 20,
-    description: "Voorkom tot 30% warmteverlies via het dak",
+    biobasedBonus: 5.0, // €5/m² extra ISDE bij biobased
+    minM2: 45,
+    description: "Biobased kartonwol — Rd 4.2, milieuvriendelijk + €5/m² extra subsidie",
     savings: 350,
+    product: "Circuflok biologische kartonwol (14cm, Rd 4.2)",
+    meldcode: "KA28539",
   },
   vloer: {
     label: "Vloerisolatie",
     icon: "⬛",
-    pricePerM2: 30,
+    pricePerM2: 67.5,
+    fixedCost: 0,
     subsidySingle: 5.5,
     subsidyDouble: 11.0,
-    minM2: 20,
-    description: "Warme voeten en lagere stookkosten",
+    biobasedBonus: 0,
+    minM2: 40,
+    description: "Gesloten cel foam — Rd 5.2, warme voeten gegarandeerd",
     savings: 250,
+    product: "Plixxent gesloten cel foam (12cm, Rd 5.2)",
+    meldcode: "KA18459",
   },
   spouwmuur: {
     label: "Spouwmuurisolatie",
     icon: "🧱",
-    pricePerM2: 25,
+    pricePerM2: 47.5,
+    fixedCost: 0,
     subsidySingle: 5.25,
     subsidyDouble: 10.5,
-    minM2: 10,
-    description: "Snelste terugverdientijd van alle maatregelen",
+    biobasedBonus: 0,
+    minM2: 50,
+    description: "Minerale inblaaswol — Rd 1.6, snelste terugverdientijd",
     savings: 300,
+    product: "URSA minerale inblaaswol waterafstotend (min. 4cm, Rd 1.6)",
+    meldcode: "KA1853",
   },
   bodem: {
     label: "Bodemisolatie",
     icon: "🌍",
-    pricePerM2: 35,
+    pricePerM2: 45,
+    fixedCost: 0,
     subsidySingle: 3.0,
     subsidyDouble: 6.0,
-    minM2: 20,
-    description: "Ideaal voor woningen met kruipruimte",
+    biobasedBonus: 0,
+    minM2: 40,
+    description: "Isoparels++ — Rd 3.5, ideaal bij kruipruimte",
     savings: 200,
+    product: "Isoparels++ (17.5cm, Rd 3.5)",
+    meldcode: "KA18453",
   },
   gevel: {
     label: "Gevelisolatie",
     icon: "🏗️",
     pricePerM2: 120,
+    fixedCost: 0,
     subsidySingle: 20.25,
     subsidyDouble: 40.5,
+    biobasedBonus: 0,
     minM2: 10,
     description: "De meest complete oplossing voor buitenmuren",
     savings: 400,
+    product: "Op aanvraag",
+    meldcode: "",
   },
   glas: {
     label: "HR++ Glasisolatie",
     icon: "🪟",
     pricePerM2: 250,
+    fixedCost: 0,
     subsidySingle: 25.0,
     subsidyDouble: 50.0,
+    biobasedBonus: 0,
     minM2: 3,
     description: "Direct merkbaar verschil in comfort",
     savings: 280,
+    product: "Op aanvraag",
+    meldcode: "",
   },
 };
 
@@ -158,13 +182,15 @@ export default function DeIsolatieCheck() {
       const leadData = {
         ...formData,
         isolatietypes: selected.map((k) => INSULATION_DATA[k].label).join(", "),
-        totalSubsidy: totalSubsidy,
+        producten: selected.map((k) => INSULATION_DATA[k].product || "").join(" | "),
         totalCost: totalCost,
+        totalSubsidy: totalSubsidy,
         netCost: netCost,
         totalSavings: totalSavings,
         gemeente: gemeenteInfo?.gemeente || "Onbekend",
         gemeenteSubsidie: gemeenteSubsidie,
         totaalSubsidie: totalSubsidy + gemeenteSubsidie,
+        commissie30: commissie,
         datum: new Date().toLocaleString("nl-NL"),
       };
       if (GOOGLE_SHEETS_URL) {
@@ -193,18 +219,22 @@ export default function DeIsolatieCheck() {
 
   const totalCost = selected.reduce((sum, key) => {
     const d = INSULATION_DATA[key];
-    return sum + d.pricePerM2 * (m2Values[key] || d.minM2);
+    const m2 = m2Values[key] || d.minM2;
+    return sum + d.pricePerM2 * m2 + (d.fixedCost || 0);
   }, 0);
 
   const totalSubsidy = selected.reduce((sum, key) => {
     const d = INSULATION_DATA[key];
     const m2 = m2Values[key] || d.minM2;
-    return sum + (isDouble ? d.subsidyDouble : d.subsidySingle) * m2;
+    const baseSubsidy = (isDouble ? d.subsidyDouble : d.subsidySingle) * m2;
+    const bioBonus = (d.biobasedBonus || 0) * m2;
+    return sum + baseSubsidy + bioBonus;
   }, 0);
 
   const totalSavings = selected.reduce((sum, key) => sum + INSULATION_DATA[key].savings, 0);
   const subsidyPercent = totalCost > 0 ? (totalSubsidy / totalCost) * 100 : 0;
   const netCost = totalCost - totalSubsidy;
+  const commissie = Math.round(totalCost * 0.30);
 
   const scrollToCalc = () => calcRef.current?.scrollIntoView({ behavior: "smooth" });
 
@@ -425,15 +455,43 @@ export default function DeIsolatieCheck() {
                       <span style={{ fontSize: "28px", display: "block", marginBottom: "10px" }}>{data.icon}</span>
                       <div style={{ fontSize: "15px", fontWeight: 700, color: "#1e293b", marginBottom: "5px" }}>{data.label}</div>
                       <div style={{ fontSize: "12.5px", color: "#94a3b8", lineHeight: 1.5 }}>{data.description}</div>
-                      <div style={{ marginTop: "12px", fontSize: "12px", color: "#16a34a", fontWeight: 700 }}>
-                        {isDouble && isSel ? formatCurrency(data.subsidyDouble) : formatCurrency(data.subsidySingle)}/m²
-                        {isDouble && isSel && (
-                          <span style={{
-                            marginLeft: "6px", background: "#dcfce7",
-                            padding: "2px 8px", borderRadius: "20px", fontSize: "10px",
-                            color: "#15803d", fontWeight: 800,
-                          }}>2× BONUS</span>
-                        )}
+                      {data.biobasedBonus > 0 && (
+                        <div style={{
+                          display: "inline-block", marginTop: "8px",
+                          background: "linear-gradient(135deg, #ecfdf5, #d1fae5)",
+                          padding: "4px 10px", borderRadius: "20px",
+                          fontSize: "11px", fontWeight: 700, color: "#047857",
+                          border: "1px solid #a7f3d0",
+                        }}>
+                          🌿 Biobased — €{data.biobasedBonus}/m² extra subsidie
+                        </div>
+                      )}
+                      {data.product && data.product !== "Op aanvraag" && (
+                        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "6px", fontStyle: "italic" }}>
+                          {data.product}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
+                        <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>
+                          €{data.pricePerM2}/m²
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#16a34a", fontWeight: 700 }}>
+                          {isDouble && isSel ? formatCurrency(data.subsidyDouble) : formatCurrency(data.subsidySingle)}/m² subsidie
+                          {data.biobasedBonus > 0 && (
+                            <span style={{
+                              marginLeft: "6px", background: "#d1fae5",
+                              padding: "2px 8px", borderRadius: "20px", fontSize: "10px",
+                              color: "#047857", fontWeight: 800,
+                            }}>+€{data.biobasedBonus} BIO</span>
+                          )}
+                          {isDouble && isSel && (
+                            <span style={{
+                              marginLeft: "6px", background: "#dcfce7",
+                              padding: "2px 8px", borderRadius: "20px", fontSize: "10px",
+                              color: "#15803d", fontWeight: 800,
+                            }}>2× BONUS</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -447,6 +505,11 @@ export default function DeIsolatieCheck() {
                   color: "#15803d",
                 }}>
                   🎉 Combinatiebonus actief — je subsidiebedragen zijn verdubbeld!
+                  {selected.includes("dak") && (
+                    <div style={{ fontSize: "11.5px", color: "#64748b", fontWeight: 500, marginTop: "6px" }}>
+                      Let op: de biobased bonus (€5/m²) wordt niet verdubbeld, maar komt bovenop de verdubbelde ISDE-subsidie.
+                    </div>
+                  )}
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "center", marginTop: "28px" }}>
@@ -507,6 +570,20 @@ export default function DeIsolatieCheck() {
                       {(m2Values[key] || 0) > 0 && (m2Values[key] || 0) < data.minM2 && (
                         <div style={{ color: "#f59e0b", fontSize: "12px", marginTop: "8px", fontWeight: 500 }}>
                           ⚠ Minimaal {data.minM2} m² nodig voor subsidie
+                        </div>
+                      )}
+                      {(m2Values[key] || 0) >= data.minM2 && (
+                        <div style={{
+                          display: "flex", justifyContent: "space-between", marginTop: "10px",
+                          fontSize: "12px", color: "#64748b", fontWeight: 500,
+                        }}>
+                          <span>💰 Kosten: {formatCurrency(data.pricePerM2 * (m2Values[key] || 0) + (data.fixedCost || 0))}</span>
+                          <span style={{ color: "#16a34a", fontWeight: 700 }}>
+                            Subsidie: {formatCurrency(
+                              (isDouble ? data.subsidyDouble : data.subsidySingle) * (m2Values[key] || 0) +
+                              (data.biobasedBonus || 0) * (m2Values[key] || 0)
+                            )}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -641,6 +718,56 @@ export default function DeIsolatieCheck() {
                       <div style={{ fontSize: "22px", fontWeight: 800, color: stat.color }}>{stat.value}</div>
                     </div>
                   ))}
+                </div>
+
+                {/* Kostenopbouw per maatregel */}
+                <div style={{
+                  background: "#fff", borderRadius: "16px", padding: "24px",
+                  marginTop: "20px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                  textAlign: "left",
+                }}>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>
+                    Kostenopbouw
+                  </div>
+                  {selected.map((key) => {
+                    const d = INSULATION_DATA[key];
+                    const m2 = m2Values[key] || d.minM2;
+                    const cost = d.pricePerM2 * m2 + (d.fixedCost || 0);
+                    const sub = (isDouble ? d.subsidyDouble : d.subsidySingle) * m2 + (d.biobasedBonus || 0) * m2;
+                    return (
+                      <div key={key} style={{
+                        padding: "14px 0", borderBottom: "1px solid #f1f5f9",
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <span style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b" }}>{d.icon} {d.label}</span>
+                            <div style={{ fontSize: "11.5px", color: "#94a3b8", marginTop: "3px" }}>
+                              {m2} m² × €{d.pricePerM2}/m²
+                              {d.fixedCost > 0 && <span> + €{d.fixedCost} (afwerking)</span>}
+                            </div>
+                            {d.product && d.product !== "Op aanvraag" && (
+                              <div style={{ fontSize: "11px", color: "#64748b", fontStyle: "italic", marginTop: "2px" }}>
+                                {d.product}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b" }}>{formatCurrency(cost)}</div>
+                            <div style={{ fontSize: "12px", fontWeight: 600, color: "#16a34a" }}>
+                              -{formatCurrency(sub)} subsidie
+                              {d.biobasedBonus > 0 && (
+                                <span style={{
+                                  display: "inline-block", marginLeft: "4px",
+                                  background: "#d1fae5", padding: "1px 6px",
+                                  borderRadius: "10px", fontSize: "10px", color: "#047857",
+                                }}>🌿 +€{(d.biobasedBonus * m2).toLocaleString("nl-NL")}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
